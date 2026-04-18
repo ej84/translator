@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <meta name="theme-color" content="#ffffff" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="통역기" />
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+  <title>통역기</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #ffffff;
+      --bg2: #f5f5f4;
+      --bg3: #eeece9;
+      --text: #1c1b19;
+      --text2: #6b6962;
+      --text3: #a8a49d;
+      --border: rgba(0,0,0,0.10);
+      --border2: rgba(0,0,0,0.18);
+      --radius-md: 10px;
+      --radius-lg: 14px;
+      --red-bg: #FCEBEB;
+      --red-text: #A32D2D;
+      --green-bg: #EAF3DE;
+      --green-text: #3B6D11;
+      --blue-bg: #E6F1FB;
+      --blue-text: #185FA5;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #1c1b19;
+        --bg2: #262522;
+        --bg3: #2e2c29;
+        --text: #f0ede8;
+        --text2: #a8a49d;
+        --text3: #6b6962;
+        --border: rgba(255,255,255,0.10);
+        --border2: rgba(255,255,255,0.18);
+        --red-bg: #3d1a1a;
+        --red-text: #f4a0a0;
+        --green-bg: #1a2e10;
+        --green-text: #a0cc72;
+        --blue-bg: #102038;
+        --blue-text: #85b7eb;
+      }
+    }
+
+    html, body {
+      height: 100%;
+      font-family: -apple-system, 'Apple SD Gothic Neo', BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg3);
+      color: var(--text);
+    }
+
+    .app {
+      max-width: 430px;
+      margin: 0 auto;
+      min-height: 100dvh;
+      background: var(--bg3);
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Header */
+    .header {
+      background: var(--bg);
+      border-bottom: 0.5px solid var(--border);
+      padding: 56px 20px 14px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+    }
+
+    .header-title { font-size: 22px; font-weight: 600; letter-spacing: -0.5px; }
+    .header-sub { font-size: 13px; color: var(--text2); margin-top: 2px; }
+
+    .status-dot {
+      width: 9px; height: 9px; border-radius: 50%;
+      background: #639922; transition: background 0.2s;
+    }
+    .status-dot.listening { background: #E24B4A; animation: blink 0.8s infinite; }
+    .status-dot.loading { background: #BA7517; animation: blink 0.6s infinite; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+    /* Mode toggle */
+    .mode-wrap { background: var(--bg); padding: 12px 16px; border-bottom: 0.5px solid var(--border); }
+    .mode-toggle {
+      display: flex;
+      background: var(--bg2);
+      border: 0.5px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 3px; gap: 3px;
+    }
+    .mode-btn {
+      flex: 1; padding: 9px 6px;
+      border: none; border-radius: calc(var(--radius-lg) - 2px);
+      font-size: 13px; font-weight: 400;
+      cursor: pointer; background: transparent;
+      color: var(--text2); transition: all 0.15s;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+    }
+    .mode-btn.active {
+      background: var(--bg);
+      color: var(--text); font-weight: 500;
+      border: 0.5px solid var(--border2);
+    }
+
+    /* Lang indicator */
+    .lang-row {
+      display: flex; align-items: center; justify-content: center;
+      gap: 10px; padding: 14px 20px 10px;
+    }
+    .lang-tag {
+      font-size: 13px; font-weight: 500;
+      padding: 5px 16px; border-radius: 20px;
+      border: 0.5px solid var(--border2);
+      color: var(--text); background: var(--bg);
+    }
+    .lang-arrow { color: var(--text3); font-size: 18px; }
+
+    /* Mic */
+    .mic-section {
+      display: flex; flex-direction: column; align-items: center;
+      padding: 16px 20px 12px; gap: 12px;
+    }
+    .mic-btn {
+      width: 82px; height: 82px; border-radius: 50%;
+      border: 0.5px solid var(--border2);
+      background: var(--bg);
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s; flex-shrink: 0;
+    }
+    .mic-btn.recording {
+      background: var(--red-bg);
+      border-color: #E24B4A;
+      transform: scale(1.04);
+    }
+    .mic-btn:active { transform: scale(0.96); }
+    .mic-btn svg { width: 30px; height: 30px; color: var(--text); transition: color 0.15s; }
+    .mic-btn.recording svg { color: #E24B4A; }
+    .mic-info { text-align: center; }
+    .mic-main { font-size: 14px; font-weight: 500; color: var(--text); }
+    .mic-sub { font-size: 12px; color: var(--text3); margin-top: 2px; }
+
+    /* Result cards */
+    .results { padding: 0 16px; display: flex; flex-direction: column; gap: 10px; }
+
+    .card {
+      background: var(--bg);
+      border: 0.5px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 14px 16px;
+    }
+    .card-label {
+      font-size: 11px; font-weight: 500; color: var(--text3);
+      text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px;
+    }
+    .card-text { font-size: 15px; line-height: 1.55; min-height: 22px; }
+    .card-text.placeholder { color: var(--text3); font-style: italic; font-size: 14px; }
+
+    .card-actions {
+      display: flex; gap: 8px; margin-top: 12px; justify-content: flex-end;
+    }
+    .action-btn {
+      background: var(--bg2); border: 0.5px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 6px 12px; font-size: 12px; color: var(--text2);
+      cursor: pointer; display: flex; align-items: center; gap: 5px;
+      transition: all 0.1s;
+    }
+    .action-btn:hover { border-color: var(--border2); color: var(--text); }
+    .action-btn svg { width: 13px; height: 13px; }
+
+    /* Status */
+    .status-bar {
+      margin: 8px 16px 0;
+      padding: 9px 14px;
+      border-radius: var(--radius-md);
+      font-size: 13px;
+      background: var(--bg2); color: var(--text2);
+      text-align: center; min-height: 37px;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.2s;
+    }
+    .status-bar.error { background: var(--red-bg); color: var(--red-text); }
+    .status-bar.success { background: var(--green-bg); color: var(--green-text); }
+    .status-bar.loading { background: var(--blue-bg); color: var(--blue-text); }
+
+    /* History */
+    .divider { height: 0.5px; background: var(--border); margin: 16px; }
+    .history-section { padding: 0 16px 40px; }
+    .history-header {
+      display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;
+    }
+    .history-label {
+      font-size: 11px; font-weight: 500; color: var(--text3);
+      text-transform: uppercase; letter-spacing: 0.06em;
+    }
+    .clear-btn {
+      background: none; border: none; font-size: 12px;
+      color: var(--text3); cursor: pointer; text-decoration: underline;
+    }
+    .history-item {
+      padding: 10px 0; border-bottom: 0.5px solid var(--border);
+    }
+    .history-item:last-child { border-bottom: none; }
+    .h-original { font-size: 13px; color: var(--text2); margin-bottom: 3px; }
+    .h-translated { font-size: 14px; color: var(--text); }
+    .h-meta { font-size: 11px; color: var(--text3); margin-top: 3px; }
+    .history-empty { font-size: 13px; color: var(--text3); padding: 8px 0; }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <div class="header">
+    <div>
+      <div class="header-title">통역기</div>
+      <div class="header-sub">한국어 ↔ 영어 실시간 통역</div>
+    </div>
+    <div class="status-dot" id="statusDot"></div>
+  </div>
+
+  <div class="mode-wrap">
+    <div class="mode-toggle">
+      <button class="mode-btn active" id="modeKo" onclick="setMode('ko')">
+        🇰🇷 한국어로 말하기
+      </button>
+      <button class="mode-btn" id="modeEn" onclick="setMode('en')">
+        🇺🇸 영어로 말하기
+      </button>
+    </div>
+  </div>
+
+  <div class="lang-row">
+    <span class="lang-tag" id="srcLang">한국어</span>
+    <span class="lang-arrow">→</span>
+    <span class="lang-tag" id="dstLang">English</span>
+  </div>
+
+  <div class="mic-section">
+    <button class="mic-btn" id="micBtn" onclick="toggleRecording()">
+      <svg id="micIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="9" y="2" width="6" height="12" rx="3"/>
+        <path d="M5 10a7 7 0 0 0 14 0"/>
+        <line x1="12" y1="19" x2="12" y2="22"/>
+        <line x1="9" y1="22" x2="15" y2="22"/>
+      </svg>
+    </button>
+    <div class="mic-info">
+      <div class="mic-main" id="micMain">버튼을 눌러 말하기</div>
+      <div class="mic-sub" id="micSub">말하기 시작하면 자동으로 번역됩니다</div>
+    </div>
+  </div>
+
+  <div class="results">
+    <div class="card">
+      <div class="card-label" id="origLabel">원본 (한국어)</div>
+      <div class="card-text placeholder" id="origText">말한 내용이 여기에 표시됩니다...</div>
+    </div>
+
+    <div class="card">
+      <div class="card-label" id="transLabel">번역 (English)</div>
+      <div class="card-text placeholder" id="transText">번역 결과가 여기에 표시됩니다...</div>
+      <div class="card-actions" id="actionBtns" style="display:none;">
+        <button class="action-btn" onclick="speakTranslation()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+            <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+          </svg>
+          소리 재생
+        </button>
+        <button class="action-btn" onclick="copyTranslation()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+          </svg>
+          복사
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="status-bar" id="statusBar">준비됨 — Chrome 브라우저에서 사용해 주세요</div>
+
+  <div class="divider"></div>
+
+  <div class="history-section">
+    <div class="history-header">
+      <div class="history-label">최근 통역</div>
+      <button class="clear-btn" onclick="clearHistory()">모두 지우기</button>
+    </div>
+    <div id="historyList">
+      <div class="history-empty">통역 기록이 없습니다.</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  let currentMode = 'ko';
+  let recognition = null;
+  let isRecording = false;
+  let currentTranslation = '';
+  let currentTtsLang = '';
+  let history = [];
+
+  function setMode(mode) {
+    currentMode = mode;
+    document.getElementById('modeKo').classList.toggle('active', mode === 'ko');
+    document.getElementById('modeEn').classList.toggle('active', mode === 'en');
+    if (mode === 'ko') {
+      document.getElementById('srcLang').textContent = '한국어';
+      document.getElementById('dstLang').textContent = 'English';
+      document.getElementById('origLabel').textContent = '원본 (한국어)';
+      document.getElementById('transLabel').textContent = '번역 (English)';
+      document.getElementById('micMain').textContent = '버튼을 눌러 말하기';
+      document.getElementById('micSub').textContent = '한국어로 말씀하세요';
+    } else {
+      document.getElementById('srcLang').textContent = 'English';
+      document.getElementById('dstLang').textContent = '한국어';
+      document.getElementById('origLabel').textContent = 'Original (English)';
+      document.getElementById('transLabel').textContent = '번역 (한국어)';
+      document.getElementById('micMain').textContent = 'Tap to speak';
+      document.getElementById('micSub').textContent = 'Speak in English';
+    }
+    resetResults();
+    setStatus('준비됨', '');
+  }
+
+  function resetResults() {
+    const origEl = document.getElementById('origText');
+    const transEl = document.getElementById('transText');
+    origEl.textContent = currentMode === 'ko' ? '말한 내용이 여기에 표시됩니다...' : 'Your speech will appear here...';
+    origEl.className = 'card-text placeholder';
+    transEl.textContent = currentMode === 'ko' ? '번역 결과가 여기에 표시됩니다...' : 'Translation will appear here...';
+    transEl.className = 'card-text placeholder';
+    document.getElementById('actionBtns').style.display = 'none';
+    currentTranslation = '';
+  }
+
+  function toggleRecording() {
+    if (isRecording) stopRecording();
+    else startRecording();
+  }
+
+  function startRecording() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      setStatus('이 브라우저는 음성 인식을 지원하지 않습니다. Chrome을 사용해 주세요.', 'error');
+      return;
+    }
+
+    recognition = new SpeechRecognition();
+    recognition.lang = currentMode === 'ko' ? 'ko-KR' : 'en-US';
+    recognition.continuous = false;
+    recognition.interimResults = true;
+
+    recognition.onstart = () => {
+      isRecording = true;
+      document.getElementById('micBtn').classList.add('recording');
+      document.getElementById('statusDot').classList.add('listening');
+      setStatus(currentMode === 'ko' ? '듣고 있습니다... 말씀하세요' : 'Listening... speak now', 'loading');
+      document.getElementById('micMain').textContent = currentMode === 'ko' ? '듣고 있어요...' : 'Listening...';
+    };
+
+    recognition.onresult = (e) => {
+      const transcript = Array.from(e.results).map(r => r[0].transcript).join('');
+      const origEl = document.getElementById('origText');
+      origEl.textContent = transcript;
+      origEl.className = 'card-text';
+    };
+
+    recognition.onend = async () => {
+      isRecording = false;
+      document.getElementById('micBtn').classList.remove('recording');
+      document.getElementById('statusDot').classList.remove('listening');
+      document.getElementById('micMain').textContent = currentMode === 'ko' ? '버튼을 눌러 말하기' : 'Tap to speak';
+
+      const orig = document.getElementById('origText').textContent;
+      const isPlaceholder = orig.includes('...') || orig === '';
+      if (!isPlaceholder) {
+        await translateText(orig);
+      } else {
+        setStatus('음성이 감지되지 않았습니다. 다시 시도해 주세요.', 'error');
+      }
+    };
+
+    recognition.onerror = (e) => {
+      isRecording = false;
+      document.getElementById('micBtn').classList.remove('recording');
+      document.getElementById('statusDot').classList.remove('listening');
+      document.getElementById('micMain').textContent = currentMode === 'ko' ? '버튼을 눌러 말하기' : 'Tap to speak';
+      if (e.error === 'no-speech') setStatus('음성이 감지되지 않았습니다.', 'error');
+      else if (e.error === 'not-allowed') setStatus('마이크 권한을 허용해 주세요. (주소창 옆 자물쇠 아이콘)', 'error');
+      else setStatus('오류: ' + e.error, 'error');
+    };
+
+    recognition.start();
+  }
+
+  function stopRecording() {
+    if (recognition) recognition.stop();
+  }
+
+  async function translateText(text) {
+    setStatus('번역 중...', 'loading');
+    document.getElementById('statusDot').classList.add('loading');
+
+    try {
+      const res = await fetch('/api/translate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, mode: currentMode }),
+      });
+
+      document.getElementById('statusDot').classList.remove('loading');
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: 'Unknown error' }));
+        throw new Error(err.error || 'API error ' + res.status);
+      }
+
+      const data = await res.json();
+      const translated = data.translated || '';
+
+      if (translated) {
+        const transEl = document.getElementById('transText');
+        transEl.textContent = translated;
+        transEl.className = 'card-text';
+        document.getElementById('actionBtns').style.display = 'flex';
+        currentTranslation = translated;
+        currentTtsLang = currentMode === 'ko' ? 'en-US' : 'ko-KR';
+        addHistory(text, translated);
+        setStatus('번역 완료!', 'success');
+        autoSpeak(translated, currentTtsLang);
+      }
+    } catch (err) {
+      document.getElementById('statusDot').classList.remove('loading');
+      setStatus('번역 오류: ' + err.message, 'error');
+    }
+  }
+
+  function autoSpeak(text, lang) {
+    if (!window.speechSynthesis) return;
+    window.speechSynthesis.cancel();
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.lang = lang;
+    utter.rate = 0.88;
+    utter.pitch = 1;
+    window.speechSynthesis.speak(utter);
+  }
+
+  function speakTranslation() {
+    if (!currentTranslation) return;
+    window.speechSynthesis.cancel();
+    autoSpeak(currentTranslation, currentTtsLang);
+    setStatus('재생 중...', 'success');
+  }
+
+  function copyTranslation() {
+    if (!currentTranslation) return;
+    navigator.clipboard.writeText(currentTranslation)
+      .then(() => setStatus('클립보드에 복사되었습니다!', 'success'))
+      .catch(() => setStatus('복사 실패 (HTTPS 환경에서만 지원됩니다)', 'error'));
+  }
+
+  function addHistory(original, translated) {
+    const srcTag = currentMode === 'ko' ? '🇰🇷' : '🇺🇸';
+    const dstTag = currentMode === 'ko' ? '🇺🇸' : '🇰🇷';
+    const time = new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+    history.unshift({ original, translated, srcTag, dstTag, time });
+    if (history.length > 15) history.pop();
+    renderHistory();
+  }
+
+  function renderHistory() {
+    const el = document.getElementById('historyList');
+    if (history.length === 0) {
+      el.innerHTML = '<div class="history-empty">통역 기록이 없습니다.</div>';
+      return;
+    }
+    el.innerHTML = history.map(h => `
+      <div class="history-item">
+        <div class="h-original">${h.srcTag} ${h.original}</div>
+        <div class="h-translated">${h.dstTag} ${h.translated}</div>
+        <div class="h-meta">${h.time}</div>
+      </div>
+    `).join('');
+  }
+
+  function clearHistory() {
+    history = [];
+    renderHistory();
+  }
+
+  function setStatus(msg, type) {
+    const el = document.getElementById('statusBar');
+    el.textContent = msg;
+    el.className = 'status-bar' + (type ? ' ' + type : '');
+  }
+</script>
+</body>
+</html>
